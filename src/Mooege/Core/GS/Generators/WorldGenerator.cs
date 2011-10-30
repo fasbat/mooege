@@ -24,6 +24,7 @@ using Mooege.Core.GS.Common.Types.Math;
 using Mooege.Core.GS.Common.Types.SNO;
 using Mooege.Core.GS.Map;
 using Mooege.Common.Helpers;
+using Mooege.Core.GS.Common.Types.Scene;
 
 
 namespace Mooege.Core.GS.Generators
@@ -45,8 +46,8 @@ namespace Mooege.Core.GS.Generators
 
             if (worldData.SceneParams.SceneChunks.Count == 0)
             {
-                Logger.Error("World {0} [{1}] is a dynamic world! Can't generate dynamic worlds yet!", worldAsset.Name, worldAsset.SNOId);
-                return null;
+                Logger.Error("World {0} [{1}] is a dynamic world! Can't generate proper dynamic worlds yet!", worldAsset.Name, worldAsset.SNOId);
+                return GenerateRandomDungeon(game, worldSNO, worldData);
             }
 
             var world = new World(game, worldSNO);
@@ -153,6 +154,67 @@ namespace Mooege.Core.GS.Generators
                 scene.Specification = sceneChunk.SceneSpecification;
                 scene.LoadActors();
             }
+
+            return world;
+        }
+
+        private static World GenerateRandomDungeon(Game.Game game, int worldSNO, Mooege.Common.MPQ.FileFormats.World worldData)
+        {
+            var world = new World(game, worldSNO);
+
+            var tiles = worldData.DRLGParams.DRLGTiles;
+
+            var tilesByType = new Dictionary<Mooege.Common.MPQ.FileFormats.TileTypes, List<Mooege.Common.MPQ.FileFormats.TileInfo>>();
+
+            foreach (var tile in tiles)
+            {
+                if (!tilesByType.ContainsKey(tile.TileType))
+                    tilesByType[tile.TileType] = new List<Mooege.Common.MPQ.FileFormats.TileInfo>();
+                tilesByType[tile.TileType].Add(tile);
+            }
+
+            {
+                var entrance = RandomHelper.RandomItem(tilesByType[Mooege.Common.MPQ.FileFormats.TileTypes.Entrance], entry => 1);
+                var scene = new Scene(world, entrance.SNOScene, null);
+                scene.MiniMapVisibility = MiniMapVisibility.Visited;
+                scene.Position = new Vector3D(0, 0, 0);
+                scene.RotationAmount = 1.0f;
+                scene.RotationAxis = new Vector3D(0, 0, 0);
+                scene.SceneGroupSNO = -1;
+
+                var spec = new SceneSpecification();
+                scene.Specification = spec;
+                spec.Cell = new Vector2D() { X = 0, Y = 0 };
+                spec.CellZ = 0;
+                spec.SNOLevelAreas = new int[] { 154588, -1, -1, -1 };
+                spec.SNOMusic = -1;
+                spec.SNONextLevelArea = -1;
+                spec.SNONextWorld = -1;
+                spec.SNOPresetWorld = -1;
+                spec.SNOPrevLevelArea = -1;
+                spec.SNOPrevWorld = -1;
+                spec.SNOReverb = -1;
+                spec.SNOWeather = 50542;
+                spec.SNOCombatMusic = -1;
+                spec.SNOAmbient = -1;
+                spec.ClusterID = -1;
+                spec.Unknown1 = 14;
+                spec.Unknown3 = 5;
+                spec.Unknown4 = -1;
+                spec.Unknown5 = 0;
+                spec.SceneCachedValues = new SceneCachedValues();
+                spec.SceneCachedValues.Unknown1 = 63;
+                spec.SceneCachedValues.Unknown2 = 96;
+                spec.SceneCachedValues.Unknown3 = 96;
+                var sceneFile = MPQStorage.Data.Assets[SNOGroup.Scene][entrance.SNOScene];
+                var sceneData = (Mooege.Common.MPQ.FileFormats.Scene)sceneFile.Data;
+                spec.SceneCachedValues.AABB1 = sceneData.AABBBounds;
+                spec.SceneCachedValues.AABB2 = sceneData.AABBMarketSetBounds;
+                spec.SceneCachedValues.Unknown4 = new int[4] { 0, 0, 0, 0 };
+                //scene.
+                scene.LoadActors();
+            }
+
 
             return world;
         }

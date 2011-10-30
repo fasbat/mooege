@@ -115,6 +115,8 @@ namespace Mooege.Common.MPQ.FileFormats
 
     #region drlg-params
 
+
+
     public class DRLGParams : ISerializableData
     {
         public List<TileInfo> DRLGTiles = new List<TileInfo>();
@@ -140,19 +142,38 @@ namespace Mooege.Common.MPQ.FileFormats
         }
     }
 
+    public enum Directions
+    {
+        North = 1,
+        South = 2,
+        East = 4,
+        West = 8,
+    }
+
+    public enum TileTypes
+    {
+        Normal = 100,
+        EventTile1 = 101, // Jar of souls? more?
+        EventTile2 = 102, // 1000 dead
+        Entrance = 200,
+        UEntrance1 = 201, // Defiled crypt what there?
+        Exit = 300,
+        Filler = 401
+    }
+
     public class TileInfo : ISerializableData
     {
-        public int Int0 { get; private set; }
-        public int Int1 { get; private set; }
-        public int SNOScene { get; private set; }
-        public int Int2 { get; private set; }
-        public TagMap TileTagMap { get; private set; }
-        public CustomTileInfo CustomTileInfo { get; private set; }
+        public int ExitDirectionBits { get; set; }
+        public TileTypes TileType { get; set; }
+        public int SNOScene { get; set; }
+        public int Int2 { get; set; }
+        public TagMap TileTagMap { get; set; }
+        public CustomTileInfo CustomTileInfo { get; set; }
 
         public void Read(MpqFileStream stream)
         {
-            Int0 = stream.ReadValueS32();
-            Int1 = stream.ReadValueS32();
+            ExitDirectionBits = stream.ReadValueS32();
+            TileType = (TileTypes)stream.ReadValueS32();
             SNOScene = stream.ReadValueS32();
             Int2 = stream.ReadValueS32();
             this.TileTagMap = stream.ReadSerializedItem<TagMap>();
